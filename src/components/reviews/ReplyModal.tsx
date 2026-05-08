@@ -18,6 +18,7 @@ import { Sparkles, Loader2, Send, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { StarRating } from './StarRating'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 interface ReplyModalProps {
   review: Review | null
@@ -129,7 +130,7 @@ export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }:
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <Label htmlFor="tone" className="text-xs font-bold text-gray-500 uppercase">Tom:</Label>
-              <Select value={tone} onValueChange={setTone}>
+              <Select value={tone} onValueChange={(value) => value && setTone(value)}>
                 <SelectTrigger className="h-9 w-full sm:w-[150px]">
                   <SelectValue />
                 </SelectTrigger>

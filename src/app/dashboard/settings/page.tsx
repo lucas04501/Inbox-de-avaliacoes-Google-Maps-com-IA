@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Check, Zap, Rocket, Crown, ExternalLink, Loader2 } from 'lucide-react'
+import { Check, Zap, Rocket, Crown } from 'lucide-react'
 import { stripe } from '@/lib/stripe'
 import { redirect } from 'next/navigation'
 import { PlanActions } from '@/components/settings/PlanActions'
+import Stripe from 'stripe'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -104,7 +105,7 @@ export default async function SettingsPage() {
                 Você está no plano {org.plan.toUpperCase()}
               </CardTitle>
               <CardDescription>
-                Próxima renovação em: {new Date(subscription.current_period_end * 1000).toLocaleDateString('pt-BR')}
+                Próxima renovação em: {new Date((subscription as Stripe.Subscription).current_period_end * 1000).toLocaleDateString('pt-BR')}
               </CardDescription>
             </CardHeader>
             <CardFooter>
