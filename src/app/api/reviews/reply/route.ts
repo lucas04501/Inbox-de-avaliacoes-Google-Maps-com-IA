@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const { reviewId, replyText } = await req.json()
 
     // TODO: Implement Google My Business API call to post reply
-    console.log(`Replying to ${reviewId} with: ${replyText}`)
+    // Integration point for production GMB API
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
