@@ -22,7 +22,7 @@ Centralize avaliações de múltiplos estabelecimentos, receba sugestões de res
 
 ## 📸 Screenshots
 
-> _Em breve — adicione prints do dashboard aqui após o deploy_
+> _Em breve — 
 
 ---
 
