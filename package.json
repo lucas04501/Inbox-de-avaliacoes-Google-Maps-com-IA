@@ -11,6 +11,7 @@
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@google/generative-ai": "^0.24.1",
+    "@googlemaps/google-maps-services-js": "^3.4.2",
     "@stripe/stripe-js": "^9.4.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
