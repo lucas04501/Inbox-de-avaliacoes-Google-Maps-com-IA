@@ -119,7 +119,7 @@ export function ReviewInbox({
               <ReviewCard 
                 key={review.id} 
                 review={review}
-                locationName={getLocationName(review.location_id)}
+                locationName={getLocationById(review.location_id)?.name || ""}
                 onReply={handleReply}
                 onIgnore={handleIgnore}
               />

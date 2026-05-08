@@ -33,7 +33,7 @@ export default function LandingPage() {
             <a href="#como-funciona" className="hover:text-green-600 transition-colors">Como funciona</a>
             <a href="#precos" className="hover:text-green-600 transition-colors">Preços</a>
             <Link href="/login" className="hover:text-green-600 transition-colors">Login</Link>
-            <Button asChild className="bg-green-600 hover:bg-green-700">
+            <Button className="bg-green-600 hover:bg-green-700">
               <Link href="/register">Começar Grátis</Link>
             </Button>
           </nav>
@@ -55,10 +55,10 @@ export default function LandingPage() {
               Centralize todos os seus locais, receba alertas de avaliações negativas e gere respostas personalizadas em segundos.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-              <Button asChild size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-lg px-8 h-14">
+              <Button size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-lg px-8 h-14">
                 <Link href="/register">Começar Grátis</Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 h-14">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 h-14">
                 <Link href="#como-funciona">Ver como funciona</Link>
               </Button>
             </div>
@@ -287,7 +287,7 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Button asChild variant={plan.primary ? "default" : "outline"} className={cn(
+                  <Button variant={plan.primary ? "default" : "outline"} className={cn(
                     "w-full h-12 font-bold",
                     plan.primary ? "bg-green-600 hover:bg-green-700" : ""
                   )}>
@@ -306,7 +306,7 @@ export default function LandingPage() {
             <p className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto">
               Junte-se a centenas de empresas que já economizam tempo e encantam clientes com o ReputaçãoAI.
             </p>
-            <Button asChild size="lg" className="bg-green-600 hover:bg-green-700 text-lg px-12 h-16">
+            <Button size="lg" className="bg-green-600 hover:bg-green-700 text-lg px-12 h-16">
               <Link href="/register">Começar agora mesmo</Link>
             </Button>
             <div className="mt-8 flex items-center justify-center gap-8 text-sm text-gray-400 font-medium">

@@ -25,7 +25,7 @@ export async function searchPlaces(query: string) {
       params: {
         input: query,
         key: process.env.GOOGLE_PLACES_API_KEY!,
-        types: ['establishment']
+        types: 'establishment' as any
       }
     })
 

@@ -65,7 +65,8 @@ export async function syncLocationReviews(locationId: string) {
 }
 
 async function sendNegativeReviewAlert(location: any, review: any) {
-  const { data: org } = await createClient()
+  const supabase = await createClient()
+  const { data: org } = await supabase
     .from('organizations')
     .select('user_id')
     .eq('id', location.org_id)
@@ -75,7 +76,6 @@ async function sendNegativeReviewAlert(location: any, review: any) {
 
   // In a real app, you'd fetch the user's email from auth.users via admin API or a profiles table
   // For this prototype, we'll assume we can get it or use a default
-  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.admin.getUserById(org.user_id)
   
   const userEmail = user?.email
