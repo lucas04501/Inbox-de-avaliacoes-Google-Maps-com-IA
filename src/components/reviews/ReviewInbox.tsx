@@ -1,126 +1,188 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 import { Review, Location } from '@/types'
 import { ReviewCard } from './ReviewCard'
+import { ReviewFilters } from './ReviewFilters'
 import { ReplyModal } from './ReplyModal'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { 
+  Inbox, 
+  Star, 
+  CheckCircle2, 
+  Clock, 
+  SearchX
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 interface ReviewInboxProps {
+  initialReviews: Review[]
   locations: Location[]
+  metrics: {
+    totalPending: number
+    avgRating: string
+    repliedToday: number
+    avgResponseTime: string
+  }
+  totalCount: number
+  pageSize: number
+  currentPage: number
 }
 
-export function ReviewInbox({ locations }: ReviewInboxProps) {
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<'pending' | 'replied' | 'all'>('pending')
-  const [ratingFilter, setRatingFilter] = useState<string>('all')
+export function ReviewInbox({ 
+  initialReviews, 
+  locations, 
+  metrics, 
+  totalCount, 
+  pageSize, 
+  currentPage 
+}: ReviewInboxProps) {
   const [selectedReview, setSelectedReview] = useState<Review | null>(null)
-  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const router = useRouter()
   const supabase = createClient()
-
-  const fetchReviews = async () => {
-    setLoading(true)
-    
-    let query = supabase
-      .from('reviews')
-      .select('*')
-      .order('published_at', { ascending: false })
-
-    if (statusFilter !== 'all') {
-      query = query.eq('status', statusFilter)
-    }
-
-    if (ratingFilter !== 'all') {
-      query = query.eq('rating', parseInt(ratingFilter))
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Error fetching reviews:', error)
-    } else {
-      setReviews(data || [])
-    }
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    fetchReviews()
-  }, [statusFilter, ratingFilter, supabase])
-
-  const getLocationName = (locationId: string) => {
-    return locations.find(l => l.id === locationId)?.name || 'Local desconhecido'
-  }
 
   const handleReply = (review: Review) => {
     setSelectedReview(review)
-    setIsReplyModalOpen(true)
+    setIsModalOpen(true)
+  }
+
+  const handleIgnore = async (reviewId: string) => {
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .update({ status: 'ignored' })
+        .eq('id', reviewId)
+
+      if (error) throw error
+      
+      toast.success('Avaliação ignorada.')
+      router.refresh()
+    } catch (error: any) {
+      toast.error('Erro ao ignorar avaliação: ' + error.message)
+    }
+  }
+
+  const getLocationName = (locationId: string) => {
+    return locations.find(l => l.id === locationId)?.name || 'Local'
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Tabs defaultValue="pending" className="w-full sm:w-auto" onValueChange={(v) => setStatusFilter(v as any)}>
-          <TabsList>
-            <TabsTrigger value="pending">Pendentes</TabsTrigger>
-            <TabsTrigger value="replied">Respondidas</TabsTrigger>
-            <TabsTrigger value="all">Todas</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-500">Filtrar por nota:</span>
-          <Select value={ratingFilter} onValueChange={setRatingFilter}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Todas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="5">5 estrelas</SelectItem>
-              <SelectItem value="4">4 estrelas</SelectItem>
-              <SelectItem value="3">3 estrelas</SelectItem>
-              <SelectItem value="2">2 estrelas</SelectItem>
-              <SelectItem value="1">1 estrela</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="space-y-8">
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard 
+          title="Pendentes" 
+          value={metrics.totalPending.toString()} 
+          icon={<Inbox className="h-4 w-4 text-orange-500" />}
+          description="Aguardando resposta"
+        />
+        <MetricCard 
+          title="Nota Média" 
+          value={metrics.avgRating} 
+          icon={<Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
+          description="Geral de todos os locais"
+        />
+        <MetricCard 
+          title="Respondidas Hoje" 
+          value={metrics.repliedToday.toString()} 
+          icon={<CheckCircle2 className="h-4 w-4 text-green-500" />}
+          description="Engajamento diário"
+        />
+        <MetricCard 
+          title="Tempo Médio" 
+          value={`${metrics.avgResponseTime}h`} 
+          icon={<Clock className="h-4 w-4 text-blue-500" />}
+          description="Desde a publicação"
+        />
       </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-[200px] w-full" />
-          ))}
+      {/* Filters */}
+      <ReviewFilters locations={locations} />
+
+      {/* Reviews List */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            Resultados 
+            <span className="text-sm font-normal text-gray-500">({totalCount} avaliações)</span>
+          </h3>
         </div>
-      ) : reviews.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-lg font-medium text-gray-500">Nenhuma avaliação encontrada.</p>
-          <p className="text-sm text-gray-400">Tente mudar os filtros ou sincronizar novos dados.</p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {reviews.map(review => (
-            <ReviewCard 
-              key={review.id} 
-              review={review} 
-              locationName={getLocationName(review.location_id)}
-              onReply={handleReply}
-            />
-          ))}
-        </div>
-      )}
+
+        {initialReviews.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4">
+            {initialReviews.map((review) => (
+              <ReviewCard 
+                key={review.id} 
+                review={review}
+                locationName={getLocationName(review.location_id)}
+                onReply={handleReply}
+                onIgnore={handleIgnore}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed">
+            <SearchX className="h-12 w-12 text-gray-300 mb-4" />
+            <p className="text-gray-500 font-medium">Nenhuma avaliação encontrada com estes filtros.</p>
+          </div>
+        )}
+
+        {/* Simple Pagination */}
+        {totalCount > pageSize && (
+          <div className="flex justify-center gap-2 mt-8">
+            <PaginationControls currentPage={currentPage} totalPages={Math.ceil(totalCount / pageSize)} />
+          </div>
+        )}
+      </div>
 
       <ReplyModal 
         review={selectedReview}
         locationName={selectedReview ? getLocationName(selectedReview.location_id) : ''}
-        isOpen={isReplyModalOpen}
-        onClose={() => setIsReplyModalOpen(false)}
-        onSuccess={fetchReviews}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => router.refresh()}
       />
+    </div>
+  )
+}
+
+function MetricCard({ title, value, icon, description }: { title: string, value: string, icon: React.ReactNode, description: string }) {
+  return (
+    <Card className="bg-white border-gray-100 shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xs font-bold text-gray-500 uppercase tracking-wider">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-gray-900">{value}</div>
+        <p className="text-[10px] text-gray-500 mt-1">{description}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PaginationControls({ currentPage, totalPages }: { currentPage: number, totalPages: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      {Array.from({ length: totalPages }).map((_, i) => {
+        const page = i + 1
+        return (
+          <a
+            key={page}
+            href={`?page=${page}`}
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+              currentPage === page 
+                ? "bg-primary text-white" 
+                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            {page}
+          </a>
+        )
+      })}
     </div>
   )
 }

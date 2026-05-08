@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Review } from '@/types'
 import {
   Dialog,
@@ -14,9 +14,10 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Sparkles, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { Sparkles, Loader2, Send, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { StarRating } from './StarRating'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface ReplyModalProps {
   review: Review | null
@@ -28,10 +29,20 @@ interface ReplyModalProps {
 
 export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }: ReplyModalProps) {
   const [reply, setReply] = useState('')
-  const [tone, setTone] = useState<'formal' | 'casual' | 'empathetic'>('empathetic')
+  const [tone, setTone] = useState('empático')
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const supabase = createClient()
+
+  // Character limit
+  const MAX_CHARS = 4096
+
+  useEffect(() => {
+    if (isOpen && review) {
+      setReply(review.ai_suggestion || '')
+    } else {
+      setReply('')
+    }
+  }, [isOpen, review])
 
   const handleGenerateAI = async () => {
     if (!review) return
@@ -41,20 +52,25 @@ export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          reviewId: review.id,
           reviewText: review.text,
           rating: review.rating,
+          authorName: review.author_name,
           businessName: locationName,
           tone,
         }),
       })
 
       const data = await response.json()
+      if (data.error) throw new Error(data.error)
+      
       if (data.suggestion) {
-        setReply(data.suggestion.trim())
+        setReply(data.suggestion)
+        toast.success('Sugestão gerada com sucesso!')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating suggestion:', error)
-      toast.error('Não foi possível gerar a sugestão.')
+      toast.error('Não foi possível gerar a sugestão: ' + error.message)
     } finally {
       setIsGenerating(false)
     }
@@ -64,85 +80,130 @@ export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }:
     if (!review || !reply) return
     setIsSubmitting(true)
     try {
-      const { error } = await supabase
-        .from('reviews')
-        .update({
-          reply_text: reply,
-          replied_at: new Date().toISOString(),
-          status: 'replied',
-        })
-        .eq('id', review.id)
+      const response = await fetch('/api/reviews/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reviewId: review.id,
+          replyText: reply,
+        }),
+      })
 
-      if (error) throw error
+      const data = await response.json()
+      if (data.error) throw new Error(data.error)
 
-      toast.success('Resposta enviada com sucesso.')
+      toast.success('Resposta publicada com sucesso!')
       onSuccess()
       onClose()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting reply:', error)
-      toast.error('Não foi possível enviar a resposta.')
+      toast.error('Erro ao publicar resposta: ' + error.message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Responder Avaliação</DialogTitle>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden gap-0">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle className="text-xl">Responder Avaliação</DialogTitle>
           <DialogDescription>
-            De {review?.author_name} para {locationName}
+            Publique uma resposta oficial para {review?.author_name} em {locationName}.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="rounded-lg bg-gray-50 p-3 border">
-            <p className="text-sm text-gray-700 italic">"{review?.text || 'Sem comentário'}"</p>
+
+        <div className="p-6 space-y-6">
+          {/* Review Original Preview */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avaliação Original</span>
+              <StarRating rating={review?.rating || 0} />
+            </div>
+            <p className="text-sm text-gray-600 italic leading-relaxed">
+              "{review?.text || 'Sem comentário.'}"
+            </p>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="tone" className="text-xs">Tom:</Label>
-              <Select value={tone} onValueChange={(v: any) => setTone(v)}>
-                <SelectTrigger className="h-8 w-[120px] text-xs">
+
+          {/* AI Settings */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Label htmlFor="tone" className="text-xs font-bold text-gray-500 uppercase">Tom:</Label>
+              <Select value={tone} onValueChange={setTone}>
+                <SelectTrigger className="h-9 w-full sm:w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="empathetic">Empático</SelectItem>
-                  <SelectItem value="formal">Formal</SelectItem>
-                  <SelectItem value="casual">Casual</SelectItem>
+                  <SelectItem value="profissional">Profissional</SelectItem>
+                  <SelectItem value="amigável">Amigável</SelectItem>
+                  <SelectItem value="empático">Empático</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleGenerateAI} 
-              disabled={isGenerating || !review?.text}
-              className="h-8 text-xs"
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto gap-2 border-primary/20 text-primary hover:bg-primary/5 hover:text-primary"
+              onClick={handleGenerateAI}
+              disabled={isGenerating}
             >
-              {isGenerating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Sparkles className="mr-2 h-3 w-3" />}
-              Sugerir com IA
+              {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              Gerar sugestão com IA
             </Button>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="reply">Sua Resposta</Label>
-            <Textarea
-              id="reply"
-              placeholder="Digite sua resposta aqui..."
-              value={reply}
-              onChange={(e) => setReply(e.target.value)}
-              rows={5}
-            />
+          {/* Reply Textarea */}
+          <div className="space-y-2 relative">
+            <Label htmlFor="reply" className="text-xs font-bold text-gray-500 uppercase">Sua Resposta</Label>
+            {isGenerating ? (
+              <div className="space-y-2 py-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-[90%]" />
+                <Skeleton className="h-4 w-[95%]" />
+                <Skeleton className="h-4 w-[60%]" />
+              </div>
+            ) : (
+              <>
+                <Textarea
+                  id="reply"
+                  placeholder="Escreva sua resposta ou use a sugestão da IA..."
+                  className="min-h-[180px] text-sm leading-relaxed resize-none"
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value.slice(0, MAX_CHARS))}
+                  disabled={isSubmitting}
+                />
+                <div className={cn(
+                  "absolute bottom-2 right-2 text-[10px] font-medium px-1.5 py-0.5 rounded",
+                  reply.length >= MAX_CHARS ? "bg-red-50 text-red-500" : "text-gray-400"
+                )}>
+                  {reply.length}/{MAX_CHARS}
+                </div>
+              </>
+            )}
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+
+        <DialogFooter className="bg-gray-50 p-6 flex flex-row sm:justify-end gap-3 border-t">
+          <Button 
+            variant="ghost" 
+            onClick={onClose} 
+            disabled={isSubmitting}
+            className="flex-1 sm:flex-none"
+          >
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !reply}>
-            {isSubmitting ? 'Enviando...' : 'Enviar Resposta'}
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting || !reply || isGenerating}
+            className="flex-1 sm:flex-none gap-2"
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+            Publicar resposta
           </Button>
         </DialogFooter>
       </DialogContent>

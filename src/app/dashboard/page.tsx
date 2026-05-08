@@ -1,15 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { ReviewCard } from '@/components/reviews/ReviewCard'
-import { ReviewFilters } from '@/components/reviews/ReviewFilters'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { 
-  Inbox, 
-  Star, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle,
-  SearchX
-} from 'lucide-react'
+import { ReviewInbox } from '@/components/reviews/ReviewInbox'
 import { Review, Location } from '@/types'
 
 interface DashboardPageProps {
@@ -36,7 +26,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // 1. Fetch Locations for filters
   const { data: locations } = await supabase.from('locations').select('*')
 
-  // 2. Fetch Metrics
+  // 2. Fetch Metrics (for the current user/org)
   const { data: metricsData } = await supabase
     .from('reviews')
     .select('rating, status, replied_at, published_at')
@@ -63,7 +53,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // 3. Fetch Reviews with Filters
   let query = supabase
     .from('reviews')
-    .select('*, locations(name)', { count: 'exact' })
+    .select('*')
 
   if (q) {
     query = query.or(`author_name.ilike.%${q}%,text.ilike.%${q}%`)
@@ -78,14 +68,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     query = query.in('rating', stars)
   }
 
-  // We fetch all filtered reviews to sort them correctly in memory 
-  // (PostgREST doesn't support the complex conditional sorting required easily)
-  // For a real production app with millions of reviews, this would need a DB view or complex order.
-  // Given the prototype scope, memory sorting is fine for up to few thousand reviews.
-  const { data: allFilteredReviews } = await query
+  const { data: filteredReviews } = await query
 
-  const sortedReviews = (allFilteredReviews as any[] || []).sort((a, b) => {
-    const priority = (r: any) => {
+  // Sorting logic
+  const sortedReviews = (filteredReviews as Review[] || []).sort((a, b) => {
+    const priority = (r: Review) => {
       if (r.status === 'pending' && r.rating <= 2) return 0
       if (r.status === 'pending') return 1
       return 2
@@ -102,111 +89,24 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const paginatedReviews = sortedReviews.slice((page - 1) * pageSize, page * pageSize)
 
   return (
-    <div className="space-y-8">
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard 
-          title="Pendentes" 
-          value={totalPending.toString()} 
-          icon={<Inbox className="h-4 w-4 text-orange-500" />}
-          description="Aguardando resposta"
-        />
-        <MetricCard 
-          title="Nota Média" 
-          value={avgRating} 
-          icon={<Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
-          description="Geral de todos os locais"
-        />
-        <MetricCard 
-          title="Respondidas Hoje" 
-          value={repliedToday.toString()} 
-          icon={<CheckCircle2 className="h-4 w-4 text-green-500" />}
-          description="Engajamento diário"
-        />
-        <MetricCard 
-          title="Tempo Médio" 
-          value={`${avgResponseTime}h`} 
-          icon={<Clock className="h-4 w-4 text-blue-500" />}
-          description="Desde a publicação"
-        />
+    <div className="flex flex-col space-y-4">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Avaliações</h2>
       </div>
-
-      {/* Filters */}
-      <ReviewFilters locations={locations || []} />
-
-      {/* Reviews List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            Resultados 
-            <span className="text-sm font-normal text-gray-500">({totalCount} avaliações)</span>
-          </h3>
-        </div>
-
-        {paginatedReviews.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
-            {paginatedReviews.map((review) => (
-              <ReviewCard 
-                key={review.id} 
-                review={review}
-                locationName={review.locations?.name}
-                onReply={() => {}} // TODO: Connect to Modal
-                onIgnore={() => {}} // TODO: Implement Action
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed">
-            <SearchX className="h-12 w-12 text-gray-300 mb-4" />
-            <p className="text-gray-500 font-medium">Nenhuma avaliação encontrada com estes filtros.</p>
-          </div>
-        )}
-
-        {/* Simple Pagination */}
-        {totalCount > pageSize && (
-          <div className="flex justify-center gap-2 mt-8">
-            <PaginationControls currentPage={page} totalPages={Math.ceil(totalCount / pageSize)} />
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function MetricCard({ title, value, icon, description }: { title: string, value: string, icon: React.ReactNode, description: string }) {
-  return (
-    <Card className="bg-white border-gray-100 shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xs font-bold text-gray-500 uppercase tracking-wider">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-gray-900">{value}</div>
-        <p className="text-[10px] text-gray-500 mt-1">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}
-
-function PaginationControls({ currentPage, totalPages }: { currentPage: number, totalPages: number }) {
-  return (
-    <div className="flex items-center gap-2">
-      {Array.from({ length: totalPages }).map((_, i) => {
-        const page = i + 1
-        return (
-          <a
-            key={page}
-            href={`?page=${page}`}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-              currentPage === page 
-                ? "bg-primary text-white" 
-                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            {page}
-          </a>
-        )
-      })}
+      
+      <ReviewInbox 
+        initialReviews={paginatedReviews}
+        locations={locations || []}
+        metrics={{
+          totalPending,
+          avgRating,
+          repliedToday,
+          avgResponseTime
+        }}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        currentPage={page}
+      />
     </div>
   )
 }
