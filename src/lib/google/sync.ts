@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getPlaceDetails } from './places'
-import { resend } from '@/lib/resend'
+import { getResend } from '@/lib/resend'
 
 export async function syncLocationReviews(locationId: string) {
   const supabase = await createClient()
@@ -85,7 +85,7 @@ async function sendNegativeReviewAlert(location: any, review: any) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: 'ReputaçãoAI <alertas@reputacaoai.com.br>',
       to: userEmail,
       subject: `⚠️ Nova avaliação negativa em ${location.name}`,
