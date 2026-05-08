@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Sparkles, Loader2, Send, XCircle } from 'lucide-react'
+import { Sparkles, Loader2, Copy, ExternalLink, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { StarRating } from './StarRating'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -23,12 +23,13 @@ import { cn } from '@/lib/utils'
 interface ReplyModalProps {
   review: Review | null
   locationName: string
+  googlePlaceId: string
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
-export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }: ReplyModalProps) {
+export function ReplyModal({ review, locationName, googlePlaceId, isOpen, onClose, onSuccess }: ReplyModalProps) {
   const [reply, setReply] = useState('')
   const [tone, setTone] = useState('empático')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -77,8 +78,18 @@ export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }:
     }
   }
 
-  const handleSubmit = async () => {
+  const handleCopyAndMarkReplied = async () => {
     if (!review || !reply) return
+    
+    // Copy to clipboard
+    try {
+      await navigator.clipboard.writeText(reply)
+      toast.success('Copiado! Cole no Google.')
+    } catch (err) {
+      toast.error('Erro ao copiar para o clipboard.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const response = await fetch('/api/reviews/reply', {
@@ -93,12 +104,10 @@ export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }:
       const data = await response.json()
       if (data.error) throw new Error(data.error)
 
-      toast.success('Resposta publicada com sucesso!')
       onSuccess()
-      onClose()
+      // We don't close immediately so they can click the link to Google
     } catch (error: any) {
-      console.error('Error submitting reply:', error)
-      toast.error('Erro ao publicar resposta: ' + error.message)
+      console.error('Error marking as replied:', error)
     } finally {
       setIsSubmitting(false)
     }
@@ -110,7 +119,7 @@ export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }:
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-xl">Responder Avaliação</DialogTitle>
           <DialogDescription>
-            Publique uma resposta oficial para {review?.author_name} em {locationName}.
+            Copie a sugestão da IA e publique manualmente no Google Maps.
           </DialogDescription>
         </DialogHeader>
 
@@ -183,6 +192,18 @@ export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }:
               </>
             )}
           </div>
+
+          <div className="flex justify-center">
+            <a
+              href={`https://search.google.com/local/reviews?placeid=${googlePlaceId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-green-600 h-auto p-0"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Abrir avaliações no Google Maps
+            </a>
+          </div>
         </div>
 
         <DialogFooter className="bg-gray-50 p-6 flex flex-row sm:justify-end gap-3 border-t">
@@ -195,16 +216,16 @@ export function ReplyModal({ review, locationName, isOpen, onClose, onSuccess }:
             Cancelar
           </Button>
           <Button 
-            onClick={handleSubmit} 
+            onClick={handleCopyAndMarkReplied} 
             disabled={isSubmitting || !reply || isGenerating}
-            className="flex-1 sm:flex-none gap-2"
+            className="flex-1 sm:flex-none gap-2 bg-green-600 hover:bg-green-700"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Copy className="h-4 w-4" />
             )}
-            Publicar resposta
+            Copiar e marcar como respondida
           </Button>
         </DialogFooter>
       </DialogContent>

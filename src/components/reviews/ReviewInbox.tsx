@@ -65,9 +65,11 @@ export function ReviewInbox({
     }
   }
 
-  const getLocationName = (locationId: string) => {
-    return locations.find(l => l.id === locationId)?.name || 'Local'
+  const getLocationById = (locationId: string) => {
+    return locations.find(l => l.id === locationId)
   }
+
+  const selectedLocation = selectedReview ? getLocationById(selectedReview.location_id) : null
 
   return (
     <div className="space-y-8">
@@ -140,7 +142,8 @@ export function ReviewInbox({
 
       <ReplyModal 
         review={selectedReview}
-        locationName={selectedReview ? getLocationName(selectedReview.location_id) : ''}
+        locationName={selectedLocation?.name || ''}
+        googlePlaceId={selectedLocation?.google_place_id || ''}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={() => router.refresh()}

@@ -12,11 +12,25 @@ export async function POST(req: Request) {
 
     const { reviewId, replyText } = await req.json()
 
-    // TODO: Implement Google My Business API call to post reply
-    // Integration point for production GMB API
+    if (!reviewId || !replyText) {
+      return NextResponse.json({ error: 'Missing reviewId or replyText' }, { status: 400 })
+    }
+
+    // Just mark as replied in the database for the manual flow
+    const { error } = await supabase
+      .from('reviews')
+      .update({
+        reply_text: replyText,
+        replied_at: new Date().toISOString(),
+        status: 'replied'
+      })
+      .eq('id', reviewId)
+
+    if (error) throw error
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
+    console.error('Reply API Error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

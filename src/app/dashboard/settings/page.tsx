@@ -105,7 +105,7 @@ export default async function SettingsPage() {
                 Você está no plano {org.plan.toUpperCase()}
               </CardTitle>
               <CardDescription>
-                Próxima renovação em: {new Date((subscription as Stripe.Subscription).current_period_end * 1000).toLocaleDateString('pt-BR')}
+                Próxima renovação em: {new Date((subscription as any).current_period_end * 1000).toLocaleDateString('pt-BR')}
               </CardDescription>
             </CardHeader>
             <CardFooter>
