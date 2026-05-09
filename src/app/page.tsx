@@ -78,19 +78,78 @@ export default function LandingPage() {
                       </div>
                     </div>
                   </aside>
-                  <main className="flex-1 p-4 sm:p-8 bg-white flex flex-col gap-6">
-                    <div className="flex justify-between items-center">
-                      <div className="h-6 w-32 bg-gray-100 rounded"></div>
+                  <main className="flex-1 p-4 sm:p-6 bg-white flex flex-col gap-4 overflow-hidden">
+                    {/* Mock TopBar */}
+                    <div className="flex justify-between items-center pb-2 border-b border-gray-50">
+                      <div className="flex flex-col gap-1">
+                        <div className="h-4 w-32 bg-gray-100 rounded"></div>
+                        <div className="h-3 w-20 bg-gray-50 rounded"></div>
+                      </div>
                       <div className="h-8 w-8 bg-gray-100 rounded-full"></div>
                     </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-gray-50 rounded-lg border border-gray-100"></div>)}
+
+                    {/* Mock Metrics */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      {[
+                        { label: 'Pendentes', val: '12', color: 'text-orange-600' },
+                        { label: 'Nota Média', val: '4.8', color: 'text-yellow-600' },
+                        { label: 'Respondidas', val: '24', color: 'text-green-600' },
+                        { label: 'Tempo Médio', val: '1.2h', color: 'text-blue-600' },
+                      ].map((m, i) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{m.label}</div>
+                          <div className={`text-lg font-black ${m.color}`}>{m.val}</div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex-1 bg-gray-50 rounded-xl border border-gray-100 p-4 flex flex-col gap-4">
-                      <div className="h-40 w-full bg-white rounded-lg shadow-sm border border-gray-100 flex items-center justify-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <Star className="h-8 w-8 text-yellow-400 fill-yellow-400" />
-                          <div className="h-4 w-48 bg-gray-100 rounded"></div>
+
+                    {/* Mock Review List */}
+                    <div className="flex-1 flex flex-col gap-3">
+                      <div className="h-4 w-24 bg-gray-100 rounded mb-1"></div>
+                      
+                      {/* Card 1 - Urgent */}
+                      <div className="p-4 bg-white rounded-xl border border-gray-100 border-l-4 border-l-red-500 shadow-sm space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex gap-3">
+                            <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-700 font-bold text-xs">BO</div>
+                            <div>
+                              <div className="text-xs font-bold">Bruno Oliveira</div>
+                              <div className="text-[10px] text-gray-400">há 2 horas em Hamburgueria</div>
+                            </div>
+                          </div>
+                          <div className="px-2 py-0.5 rounded bg-orange-100 text-orange-700 text-[10px] font-bold">Pendente</div>
+                        </div>
+                        <div className="flex gap-0.5">
+                          {[1, 2].map(s => <Star key={s} className="h-3 w-3 fill-yellow-400 text-yellow-400" />)}
+                          {[3, 4, 5].map(s => <Star key={s} className="h-3 w-3 text-gray-200" />)}
+                        </div>
+                        <p className="text-xs text-gray-600 leading-relaxed italic">"A comida demorou mais de 1 hora para chegar e veio fria. Fiquei bem decepcionado..."</p>
+                        <div className="flex justify-end pt-1">
+                          <div className="px-3 py-1.5 bg-green-600 text-white text-[10px] font-bold rounded-lg flex items-center gap-1.5 shadow-sm">
+                            <Sparkles className="h-3 w-3" /> Responder com IA
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card 2 - Replied */}
+                      <div className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm space-y-3 opacity-90 hidden sm:block">
+                        <div className="flex justify-between items-start">
+                          <div className="flex gap-3">
+                            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-xs">AS</div>
+                            <div>
+                              <div className="text-xs font-bold">Ana Silva</div>
+                              <div className="text-[10px] text-gray-400">há 1 dia em Restaurante Sabor</div>
+                            </div>
+                          </div>
+                          <div className="px-2 py-0.5 rounded bg-green-100 text-green-700 text-[10px] font-bold">Respondida</div>
+                        </div>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map(s => <Star key={s} className="h-3 w-3 fill-yellow-400 text-yellow-400" />)}
+                        </div>
+                        <p className="text-xs text-gray-600 leading-relaxed italic">"Comida maravilhosa e o atendimento foi impecável! Com certeza voltarei mais vezes."</p>
+                        <div className="p-2 bg-gray-50 rounded-lg border border-gray-100">
+                          <div className="text-[9px] font-bold text-gray-400 uppercase mb-1">Sua Resposta</div>
+                          <p className="text-[11px] text-gray-500">"Olá Ana! Ficamos extremamente felizes com seu feedback..."</p>
                         </div>
                       </div>
                     </div>
