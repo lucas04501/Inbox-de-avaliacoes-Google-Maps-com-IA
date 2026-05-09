@@ -1,4 +1,4 @@
-import { Client, PlaceDetailsRequest } from "@googlemaps/google-maps-services-js"
+import { Client } from "@googlemaps/google-maps-services-js"
 
 const client = new Client({})
 
@@ -13,8 +13,8 @@ export async function getPlaceDetails(placeId: string) {
     })
 
     return response.data.result
-  } catch (error) {
-    console.error('Error fetching Google Place details:', error)
+  } catch (error: any) {
+    console.error('Error fetching Google Place details:', error?.response?.data || error.message)
     throw error
   }
 }
@@ -30,8 +30,8 @@ export async function searchPlaces(query: string) {
     })
 
     return response.data.predictions
-  } catch (error) {
-    console.error('Error searching Google Places:', error)
+  } catch (error: any) {
+    console.error('Error searching Google Places:', error?.response?.data || error.message)
     throw error
   }
 }

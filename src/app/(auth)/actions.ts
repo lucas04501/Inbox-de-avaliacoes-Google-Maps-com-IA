@@ -44,20 +44,21 @@ export async function signup(formData: FormData) {
     return { error: error.message }
   }
 
+  // Note: If email confirmation is enabled, data.session will be null.
+  // The organization creation might fail due to RLS if there's no session.
+  // We use a service role if needed, or rely on ensure-org endpoint.
+  // For this project, we'll try to create it here as well.
   if (data.user) {
-    // Create organization for the new user
     const { error: orgError } = await supabase
       .from('organizations')
       .insert({
         user_id: data.user.id,
-        name: `${fullName}'s Organization`,
+        name: email.split('@')[0],
         plan: 'free'
       })
 
     if (orgError) {
-      console.error('Error creating organization:', orgError)
-      // Note: User is still signed up, but org creation failed. 
-      // In a real app, we might want to handle this more gracefully.
+      console.error('Signup Org Creation Error:', orgError)
     }
   }
 

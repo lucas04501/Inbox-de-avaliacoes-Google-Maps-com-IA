@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
+import { EnsureOrg } from '@/components/auth/EnsureOrg'
 
 export default async function DashboardLayout({
   children,
@@ -32,6 +33,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <EnsureOrg />
       {/* Sidebar - fixed on desktop */}
       <Sidebar plan={plan} />
 

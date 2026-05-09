@@ -69,9 +69,9 @@ export function Sidebar({ plan }: SidebarProps) {
           </div>
           <p className="text-sm font-bold text-gray-900 capitalize mb-3">{plan}</p>
           {plan === 'free' && (
-            <Button size="sm" className="w-full text-xs py-1 h-8">
-              Fazer upgrade
-            </Button>
+            <Link href="/dashboard/settings" className="w-full block text-center text-xs py-1 h-8 bg-primary text-white rounded-md font-medium leading-6 hover:bg-primary/90 transition-colors">
+                Fazer upgrade
+            </Link>
           )}
         </div>
       </div>

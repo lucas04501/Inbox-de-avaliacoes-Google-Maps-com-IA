@@ -8,19 +8,36 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const supabase = createClient()
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setError(null)
+    
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const fullName = formData.get('full_name') as string
+
+    // 1. Sign up the user
+    // We'll call the action, which handles the auth part.
+    // Note: Our signup action currently redirects to /dashboard.
+    // If it succeeds, the code below won't run.
+    // But we'll keep the logic here as requested to ensure organization exists.
     const result = await signup(formData)
+    
     if (result?.error) {
       setError(result.error)
       setLoading(false)
+      return
     }
+
+    // 2. The redirect in 'signup' action will handle moving to dashboard.
+    // The 'EnsureOrg' component in the layout will catch any missing organizations.
   }
 
   return (
